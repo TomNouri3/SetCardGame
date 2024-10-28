@@ -1,12 +1,9 @@
 package bguspl.set.ex;
-
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import javax.swing.Action;
-
-import bguspl.set.Env;
+import bguspl.set.Env; 
 
 /**
  * This class manages the players' threads and data
