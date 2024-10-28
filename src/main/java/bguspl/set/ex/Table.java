@@ -1,7 +1,5 @@
 package bguspl.set.ex;
-// עבודה חדשה
 import bguspl.set.Env;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
