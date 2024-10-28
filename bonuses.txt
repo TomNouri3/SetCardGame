@@ -1,0 +1,101 @@
+BONUS CHALLENGE FORM
+--------------------
+
+For each bonus challenge you have implemented, please replace the sentence "We are not entitled to this bonus."
+with a short description of:
+
+1. How it was implemented in your code
+2. Where it was used (in which class methods).
+3. How you tested that it is working correctly.
+
+--------------------
+
+1. Fully supporting all configuration fields and avoiding the use of magic numbers
+
+- Implementation Details:
+  - Configuration Utilization: Our implementation leverages the configuration fields available through the Env class's config object instead of hard-coding values directly into the game logic.
+   This allows the game's behavior to be easily adjusted by changing these configurations, enhancing flexibility.
+   For example, instead of directly using the number 3 to denote the size of a set, we reference env.config.featureSize.
+  - Dynamic Game Settings: The game dynamically adapts to configurations such as deck size (env.config.deckSize), table size (env.config.tableSize), number of players (env.config.players), turn timeout (env.config.turnTimeoutMillis), and penalty and reward timings (env.config.penaltyFreezeMillis, env.config.pointFreezeMillis), among others.
+   This ensures customizable gameplay without code alterations.
+
+- Usage Across Classes:
+  - Player Class:
+    - In run(), env.config.featureSize is used to determine the required number of tokens for forming a set.
+      Penalty and reward durations are determined by env.config.penaltyFreezeMillis and env.config.pointFreezeMillis, respectively.
+  - Table Class:
+    - The constructor uses env.config.tableSize to initialize structures for slot-to-card mappings, ensuring alignment with the game's configuration.
+      Card and token management methods also depend on configuration fields for consistency.
+  - Dealer Class:
+    - Methods like removeCardsFromTable() and placeCardsOnTable() utilize env.config.featureSize and env.config.tableSize for game flow management, including card distribution and set handling.
+
+- Testing and Validation:
+  - Comprehensive Testing: Extensive testing was conducted under various configurations by altering values in the Env class's config object and observing the game's adaptation. This verified the correct support for all configuration fields.
+  - Validation Against Hard-Coded Values: We reviewed the codebase to identify and replace any magic numbers with configuration field references, enhancing the game's maintainability and flexibility.
+   with a short description of:
+
+
+--------------------
+
+2. Terminating all threads (that you created) gracefully and in reverse order to the order they were created in.
+
+- Implementation Highlights:
+  This is achieved by systematically shutting down threads in reverse order of their creation.
+  The order of thread creation is as follows: the dealer thread is initiated first, followed by the player threads,
+  which are stored in an array with their respective indexes corresponding to their player number.
+  AI threads are subsequently created as player threads are allocated CPU time within the createArtificialIntelligence() method.
+  The termination process is methodically designed to reverse this order.
+  We initiate a loop that starts with the last created player thread and moves backward to the first,
+  Each player invokes their own terminate method, which sets their terminate flag to true.
+  This action leads to the natural conclusion of the player thread's run() method, gracefully ending the thread's execution.
+  The join() method is employed to ensure orderly termination, allowing the current thread to complete its operations before subsequent threads proceed.
+  After all player threads have been terminated in this reverse sequence,
+  the dealer's thread concludes its run() method, effectively bringing the entire game's thread activity to a graceful halt.
+
+- Key Usages:
+  - *Dealer Class*: Implements the terminate() method, which iterates through the players array in reverse, calling each player's terminate() method.
+  After signaling a player to terminate, it waits for the player's thread to join, ensuring it has completely stopped before proceeding to the next player.
+  This method is the entry point for gracefully shutting down game-related threads.
+  - *Player Class*: Each Player instance has a terminate() method that sets a flag indicating the thread should stop executing at the next convenient point in its loop.
+  This allows player threads to conclude their current operations safely before stopping.
+
+- Testing & Validation:
+  To validate this implementation, we conducted tests where the game was terminated under various conditions.
+  Additionally, we debugged the game and monitored for the invocation of the terminate method by the threads, ensuring a systematic and flawless termination process.
+  We also used the log file for checking.
+
+--------------------
+
+3. Handling the config.turnTimeoutMillis value as follows:
+config.turnTimeoutMillis < 0: display nothing.
+config.turnTimeoutMillis = 0: display a timer since the last action (reshuffle or set collected).
+Note: in modes without a countdown timer the dealer must ensure there is always at least one legal set on the table.
+
+We are not entitled to this bonus.
+
+--------------------
+
+4. Making sure that the threads do not wake up unless some actual job needs to be done (e.g., a value needs to be
+changed on the display, key input needs to be handled, etc.) and the only threads created by you are:
+1 thread per player + 1 additional thread for non-human players.
+
+1. Implementation Details:
+   - To ensure threads do not wake up unnecessarily,
+   the code utilizes wait(), notify(), and notifyAll() methods within synchronized blocks.
+   This mechanism allows threads to sleep when there's no immediate work and wake up when an action is needed, such as a key press or an update to the game state.
+   For limiting thread creation, the code explicitly creates one thread per player in the Dealer class and one additional thread for AI actions in the Player class for non-human players.
+
+2. Usage in Class Methods:
+   - Player Class: The main loop uses wait() to put the player's thread to sleep when waiting for actions in side the blocking queue.
+   It uses notifyAll() to wake up the thread for processing actions like placing or removing tokens.
+   -when the dealer check the set the some players send to him , the player wait for answer until he start again to play.
+   - Dealer Class: Uses wait() and notifyAll() in the main game loop to manage the dealer's actions, such as dealing cards or processing sets.
+   It controls thread creation during the initialization of player threads and the AI thread.
+   - Table Class: Methods like beforePlayerAction() and afterPlayerAction() use synchronized blocks and wait()/notifyAll() to manage access to the game state and ensure threads wait or proceed based on game events.
+
+3. Testing Correctness:
+   - Testing involved gameplay sessions under various configurations (all human players, a mix of human and AI players, all AI players).
+   Debugging sessions and print tests were used to observe the execution paths of threads, verifying the correct functioning of wait() and notifyAll() mechanisms.
+   This ensured threads remained dormant when no input was required and became active only for processing game events.
+   These tests confirmed our thread management strategy's efficiency and correctness.
+   We also used the log file for checking.
