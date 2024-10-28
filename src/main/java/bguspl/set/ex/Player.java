@@ -54,7 +54,6 @@ public class Player implements Runnable {
     private int score;
 
     // Added fields:
-
     public BlockingQueue<Integer> actions;
     private Dealer dealer;
     private volatile boolean shouldPenalty;
