@@ -53,14 +53,11 @@ public class Player implements Runnable {
      */
     private int score;
 
-    // Added fields:
     public BlockingQueue<Integer> actions;
     private Dealer dealer;
     private volatile boolean shouldPenalty;
     private volatile boolean shouldRewarded;
     private volatile AtomicBoolean waitForAnswerAboutSet;
-
-    // ------------------------------------------------------------------------------------------------------------------------
 
     /**
      * The class constructor.
@@ -73,16 +70,14 @@ public class Player implements Runnable {
      */
     public Player(Env env, Dealer dealer, Table table, int id, boolean human) {
         this.env = env;
+        this.dealer = dealer;
         this.table = table;
         this.id = id;
         this.human = human;
-
         this.terminate = false;
-        this.actions = new ArrayBlockingQueue<Integer>(env.config.featureSize, true);
-
-        this.dealer = dealer;
         shouldPenalty = false;
         shouldRewarded = false;
+        this.actions = new ArrayBlockingQueue<Integer>(env.config.featureSize, true);
         waitForAnswerAboutSet = new AtomicBoolean(false);
     }
 
@@ -104,46 +99,38 @@ public class Player implements Runnable {
 
             table.beforePlayerAction();
             boolean putSet = false;
-            if (action != null)
-            {
-                if(!table.removeToken(id, action))
-                {
-                    if(table.getPlayerCounter(id) != env.config.featureSize)
-                    {
+            if (action != null){
+                if(!table.removeToken(id, action)){
+                    if(table.getPlayerCounter(id) != env.config.featureSize){
                         table.placeToken(id, action);
-                        if(table.getPlayerCounter(id) == env.config.featureSize) // the player has set
-                        {
+                        if(table.getPlayerCounter(id) == env.config.featureSize){ // the player has set
                             waitForAnswerAboutSet.set(true);; // check
                             actions.clear(); // remove all elements from the queue.
                             try {
                                 synchronized (this) {//----------------------------------------------
-                                dealer.sets.put(id); // Submit the set to the dealer
-                                putSet = true;
-                                table.afterPlayerAction();
-                                Thread dealerThread = dealer.getDealerThread(); // Get the dealer's thread
-                                if (dealerThread != null) {
-                                    synchronized (dealer.getLock()) {
-                                        dealer.getLock().notifyAll(); // Correctly notify all threads waiting on this player's object monitor
+                                    dealer.sets.put(id); // Submit the set to the dealer
+                                    putSet = true;
+                                    table.afterPlayerAction();
+                                    Thread dealerThread = dealer.getDealerThread(); // Get the dealer's thread
+                                    if (dealerThread != null) {
+                                        synchronized (dealer.getLock()) {
+                                            dealer.getLock().notifyAll(); // Correctly notify all threads waiting on this player's object monitor
+                                        }
                                     }
-                                }
                                     wait();
                                 }
                             } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
-                            if(shouldPenalty) // check
-                            {
+                            if(shouldPenalty){ // check
                                 shouldPenalty = false;
                                 penalty();
                             }
-                            if(shouldRewarded) // check
-                            {
+                            if(shouldRewarded){ // check
                                 shouldRewarded = false;
                                 point();
                             }
                             waitForAnswerAboutSet.set(false); // check
-                            if (!human)
-                            {
-                                synchronized(aiThread)
-                                {
+                            if (!human){
+                                synchronized(aiThread){
                                     aiThread.notifyAll();
                                 }
                             }
@@ -151,8 +138,7 @@ public class Player implements Runnable {
                     }
                 }
             }
-            if(!putSet)
-            {
+            if(!putSet){
                 table.afterPlayerAction();
             }
         }
@@ -169,10 +155,8 @@ public class Player implements Runnable {
         aiThread = new Thread(() -> {
             env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
             while (!terminate) {
-
                 int simulatedAction = (int) (Math.random() * env.config.tableSize);
                 keyPressed(simulatedAction);
-
             }
             env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");
         }, "computer-" + id);
@@ -184,8 +168,7 @@ public class Player implements Runnable {
      */
     public void terminate() {
         terminate = true;
-        if(!human)
-        {
+        if(!human){
             this.aiThread.interrupt();
         }
         playerThread.interrupt();
@@ -197,15 +180,13 @@ public class Player implements Runnable {
      * @param slot - the slot corresponding to the key pressed.
      */
     public void keyPressed(int slot) {
-        if(table.getIsTableAvaliable() && !waitForAnswerAboutSet.get())
-        {
+        if(table.getIsTableAvaliable() && !waitForAnswerAboutSet.get()){
             actions.offer(slot);
         }
-        if (!human && waitForAnswerAboutSet.get()) {
+        if(!human && waitForAnswerAboutSet.get()){
             synchronized (aiThread) {
                 try {
-                    while (waitForAnswerAboutSet.get())
-                    {
+                    while(waitForAnswerAboutSet.get()){
                         aiThread.wait();
                     }
                 } catch (InterruptedException e) {Thread.currentThread().interrupt();}
